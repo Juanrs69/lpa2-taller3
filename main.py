@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
@@ -63,11 +64,20 @@ app.include_router(favoritos.router, prefix="/api/favoritos", tags=["Favoritos"]
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-# Crear un endpoint raíz que retorne información básica de la API
-@app.get("/", tags=["Root"])
-async def root():
+# Servir el frontend en la ruta raíz
+@app.get("/", tags=["Frontend"])
+async def serve_frontend():
     """
-    Endpoint raíz de la API.
+    Servir la aplicación frontend en la ruta raíz.
+    """
+    return FileResponse("static/index.html")
+
+
+# Crear un endpoint de información de la API
+@app.get("/api", tags=["Root"])
+async def api_info():
+    """
+    Endpoint con información básica de la API.
     Retorna información básica y enlaces a la documentación.
     """
     return {

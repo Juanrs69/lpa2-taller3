@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 API de Música - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'music-primary': '#1DB954',
+                        'music-dark': '#191414',
+                        'music-gray': '#535353',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-music-dark via-gray-900 to-black text-white min-h-screen">
+    <div x-data="musicApp()" x-init="init()">
+        <!-- Header -->
+        <header class="bg-music-dark/80 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-50">
+            <div class="container mx-auto px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-music text-music-primary text-2xl"></i>
+                        <h1 class="text-2xl font-bold">API de Música</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm text-gray-400">Dashboard</span>
+                        <div class="w-8 h-8 bg-music-primary rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-white text-sm"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="bg-gray-800/50 border-b border-gray-700">
+            <div class="container mx-auto px-6">
+                <div class="flex space-x-8">
+                    <button @click="activeTab = 'dashboard'"
+                            :class="activeTab === 'dashboard' ? 'border-music-primary text-music-primary' : 'border-transparent text-gray-400 hover:text-white'"
+                            class="py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        <i class="fas fa-chart-line mr-2"></i>Dashboard
+                    </button>
+                    <button @click="activeTab = 'usuarios'"
+                            :class="activeTab === 'usuarios' ? 'border-music-primary text-music-primary' : 'border-transparent text-gray-400 hover:text-white'"
+                            class="py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        <i class="fas fa-users mr-2"></i>Usuarios
+                    </button>
+                    <button @click="activeTab = 'canciones'"
+                            :class="activeTab === 'canciones' ? 'border-music-primary text-music-primary' : 'border-transparent text-gray-400 hover:text-white'"
+                            class="py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        <i class="fas fa-music mr-2"></i>Canciones
+                    </button>
+                    <button @click="activeTab = 'favoritos'"
+                            :class="activeTab === 'favoritos' ? 'border-music-primary text-music-primary' : 'border-transparent text-gray-400 hover:text-white'"
+                            class="py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        <i class="fas fa-heart mr-2"></i>Favoritos
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Loading State -->
+        <div x-show="loading" class="flex justify-center items-center py-20">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-music-primary"></div>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div x-show="activeTab === 'dashboard'" class="container mx-auto px-6 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- Stats Cards -->
+                <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-blue-100 text-sm">Total Usuarios</p>
+                            <p class="text-3xl font-bold" x-text="stats.usuarios"></p>
+                        </div>
+                        <i class="fas fa-users text-2xl opacity-80"></i>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-green-600 to-green-700 rounded-xl p-6 text-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-green-100 text-sm">Total Canciones</p>
+                            <p class="text-3xl font-bold" x-text="stats.canciones"></p>
+                        </div>
+                        <i class="fas fa-music text-2xl opacity-80"></i>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-red-600 to-red-700 rounded-xl p-6 text-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-red-100 text-sm">Total Favoritos</p>
+                            <p class="text-3xl font-bold" x-text="stats.favoritos"></p>
+                        </div>
+                        <i class="fas fa-heart text-2xl opacity-80"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-gray-800/50 rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-clock mr-2 text-music-primary"></i>
+                    Actividad Reciente
+                </h3>
+                <div class="space-y-4">
+                    <template x-for="usuario in usuarios.slice(0, 3)" :key="usuario.id">
+                        <div class="flex items-center space-x-4 p-3 bg-gray-700/30 rounded-lg">
+                            <div class="w-10 h-10 bg-music-primary rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-white text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-medium" x-text="usuario.nombre"></p>
+                                <p class="text-sm text-gray-400" x-text="usuario.correo"></p>
+                            </div>
+                            <span class="text-xs text-gray-500" x-text="new Date(usuario.fecha_registro).toLocaleDateString()"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usuarios Tab -->
+        <div x-show="activeTab === 'usuarios'" class="container mx-auto px-6 py-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Gestión de Usuarios</h2>
+                <button @click="showUserModal = true"
+                        class="bg-music-primary hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2">
+                    <i class="fas fa-plus"></i>
+                    <span>Nuevo Usuario</span>
+                </button>
+            </div>
+
+            <!-- Users Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <template x-for="usuario in usuarios" :key="usuario.id">
+                    <div class="bg-gray-800/50 rounded-xl p-6 hover:bg-gray-800/70 transition-colors">
+                        <div class="flex items-center space-x-4 mb-4">
+                            <div class="w-12 h-12 bg-music-primary rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-semibold" x-text="usuario.nombre"></h3>
+                                <p class="text-sm text-gray-400" x-text="usuario.correo"></p>
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            <p>Registrado: <span x-text="new Date(usuario.fecha_registro).toLocaleDateString()"></span></p>
+                        </div>
+                        <div class="mt-4 flex space-x-2">
+                            <button @click="viewUserFavorites(usuario.id)"
+                                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded text-sm transition-colors">
+                                Ver Favoritos
+                            </button>
+                            <button @click="deleteUser(usuario.id)"
+                                    class="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded text-sm transition-colors">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Canciones Tab -->
+        <div x-show="activeTab === 'canciones'" class="container mx-auto px-6 py-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Biblioteca Musical</h2>
+                <button @click="showSongModal = true"
+                        class="bg-music-primary hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2">
+                    <i class="fas fa-plus"></i>
+                    <span>Nueva Canción</span>
+                </button>
+            </div>
+
+            <!-- Songs Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <template x-for="cancion in canciones" :key="cancion.id">
+                    <div class="bg-gray-800/50 rounded-xl p-6 hover:bg-gray-800/70 transition-colors">
+                        <div class="flex items-start space-x-4">
+                            <div class="w-16 h-16 bg-gradient-to-br from-music-primary to-green-600 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-music text-white text-xl"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-lg" x-text="cancion.titulo"></h3>
+                                <p class="text-music-primary font-medium" x-text="cancion.artista"></p>
+                                <p class="text-sm text-gray-400" x-text="cancion.album + ' (' + cancion.año + ')'"></p>
+                                <div class="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                                    <span x-text="Math.floor(cancion.duracion / 60) + ':' + (cancion.duracion % 60).toString().padStart(2, '0')"></span>
+                                    <span x-text="cancion.genero"></span>
+                                </div>
+                            </div>
+                            <button @click="deleteSong(cancion.id)"
+                                    class="bg-red-600 hover:bg-red-700 text-white p-2 rounded transition-colors">
+                                <i class="fas fa-trash text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Favoritos Tab -->
+        <div x-show="activeTab === 'favoritos'" class="container mx-auto px-6 py-8">
+            <h2 class="text-2xl font-bold mb-6">Canciones Favoritas</h2>
+
+            <div class="space-y-4">
+                <template x-for="favorito in favoritos" :key="favorito.id">
+                    <div class="bg-gray-800/50 rounded-xl p-4 hover:bg-gray-800/70 transition-colors">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-heart text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium" x-text="getUserName(favorito.id_usuario)"></p>
+                                    <p class="text-sm text-gray-400" x-text="'❤️ ' + getSongTitle(favorito.id_cancion)"></p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-gray-500" x-text="new Date(favorito.fecha_marcado).toLocaleDateString()"></p>
+                                <button @click="deleteFavorite(favorito.id)"
+                                        class="text-red-400 hover:text-red-300 mt-1">
+                                    <i class="fas fa-trash text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- User Modal -->
+        <div x-show="showUserModal" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div @click.away="showUserModal = false" class="bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4">
+                <h3 class="text-xl font-semibold mb-4">Nuevo Usuario</h3>
+                <form @submit.prevent="createUser()">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Nombre</label>
+                            <input x-model="newUser.nombre" type="text" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-music-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Correo</label>
+                            <input x-model="newUser.correo" type="email" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-music-primary">
+                        </div>
+                    </div>
+                    <div class="flex space-x-3 mt-6">
+                        <button type="button" @click="showUserModal = false"
+                                class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit"
+                                class="flex-1 bg-music-primary hover:bg-green-600 text-white py-2 px-4 rounded-lg transition-colors">
+                            Crear
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Song Modal -->
+        <div x-show="showSongModal" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div @click.away="showSongModal = false" class="bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4">
+                <h3 class="text-xl font-semibold mb-4">Nueva Canción</h3>
+                <form @submit.prevent="createSong()">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Título</label>
+                            <input x-model="newSong.titulo" type="text" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-music-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Artista</label>
+                            <input x-model="newSong.artista" type="text" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-music-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Álbum</label>
+                            <input x-model="newSong.album" type="text" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-music-primary">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Duración (seg)</label>
+                                <input x-model="newSong.duracion" type="number" required
+                                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-music-primary">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Año</label>
+                                <input x-model="newSong.año" type="number" required min="1900" max="2030"
+                                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-music-primary">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Género</label>
+                            <input x-model="newSong.genero" type="text" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-music-primary">
+                        </div>
+                    </div>
+                    <div class="flex space-x-3 mt-6">
+                        <button type="button" @click="showSongModal = false"
+                                class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit"
+                                class="flex-1 bg-music-primary hover:bg-green-600 text-white py-2 px-4 rounded-lg transition-colors">
+                            Crear
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div x-show="toast.show" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="translate-y-2 opacity-0" x-transition:enter-end="translate-y-0 opacity-100" x-transition:leave="transition ease-in duration-200 transform" x-transition:leave-start="translate-y-0 opacity-100" x-transition:leave-end="translate-y-2 opacity-0" class="fixed bottom-4 right-4 z-50">
+            <div :class="toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'" class="text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2">
+                <i :class="toast.type === 'success' ? 'fas fa-check' : 'fas fa-exclamation-triangle'"></i>
+                <span x-text="toast.message"></span>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
