@@ -15,4 +15,13 @@ python-dotenv
 # Testing
 pytest
 pytest-asyncio
+pytest-cov
 httpx
+
+# Linting y formatting
+ruff
+pre-commit
+
+# Seguridad
+safety
+bandit

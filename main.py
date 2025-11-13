@@ -1,15 +1,19 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from app.database import create_db_and_tables
-from app.routers import usuarios, peliculas, favoritos
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-# TODO: Importar la configuración desde app.config
+from app.config import get_settings
+from app.database import check_database_connection, create_db_and_tables
+from app.routers import canciones, favoritos, usuarios
+
+# Obtener configuración
+settings = get_settings()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     """
     Gestor de ciclo de vida de la aplicación.
     Se ejecuta al iniciar y al cerrar la aplicación.
@@ -17,20 +21,25 @@ async def lifespan(app: FastAPI):
     # Startup: Crear tablas en la base de datos
     create_db_and_tables()
     yield
-    
+
     # Shutdown: Limpiar recursos si es necesario
     print("cerrando aplicación...")
 
 
 # Crear la instancia de FastAPI con metadatos apropiados
-# Incluir: title, description, version, contact, license_info
 app = FastAPI(
-    title="API de Películas",
-    description="API RESTful para gestionar usuarios, películas y favoritos",
-    version="1.0.0",
+    title=settings.app_name,
+    description=settings.description,
+    version=settings.app_version,
     lifespan=lifespan,
-    # TODO: Agregar información de contacto y licencia
-
+    contact={
+        "name": "Juan Alejandro Ramirez Sanchez",
+        "email": "juan.ramirez@ejemplo.com",
+    },
+    license_info={
+        "name": "MIT License",
+        "url": "https://opensource.org/licenses/MIT",
+    },
 )
 
 
@@ -38,16 +47,20 @@ app = FastAPI(
 # Esto es importante para desarrollo con frontend separado
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En producción, especificar orígenes permitidos
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# TODO: Incluir los routers de usuarios, canciones y favoritos
-# Ejemplo:
-# app.include_router(usuarios.router, prefix="/api/usuarios", tags=["Usuarios"])
+# Incluir los routers de usuarios, canciones y favoritos
+app.include_router(usuarios.router, prefix="/api/usuarios", tags=["Usuarios"])
+app.include_router(canciones.router, prefix="/api/canciones", tags=["Canciones"])
+app.include_router(favoritos.router, prefix="/api/favoritos", tags=["Favoritos"])
+
+# Montar archivos estáticos para el frontend
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 # Crear un endpoint raíz que retorne información básica de la API
@@ -58,7 +71,17 @@ async def root():
     Retorna información básica y enlaces a la documentación.
     """
     return {
-        # TODO: Agregar información 
+        "message": f"Bienvenido a {settings.app_name}",
+        "version": settings.app_version,
+        "description": settings.description,
+        "developer": "Juan Alejandro Ramirez Sanchez",
+        "docs": "/docs",
+        "redoc": "/redoc",
+        "endpoints": {
+            "usuarios": "/api/usuarios",
+            "canciones": "/api/canciones",
+            "favoritos": "/api/favoritos",
+        },
     }
 
 
@@ -69,10 +92,14 @@ async def health_check():
     Health check endpoint para verificar el estado de la API.
     Útil para sistemas de monitoreo y orquestación.
     """
+    # Verificar conexión a base de datos
+    db_status = "connected" if check_database_connection() else "disconnected"
+
     return {
-        "status": "healthy",
-        # TODO: Agregar verificación de conexión a base de datos
-        # TODO: Agregar información sobre el sistema (uptime, memoria, etc.)
+        "status": "healthy" if db_status == "connected" else "unhealthy",
+        "database": db_status,
+        "environment": settings.environment,
+        "version": settings.app_version,
     }
 
 
@@ -84,9 +111,11 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     uvicorn.run(
-        # TODO: Configurar el servidor uvicorn con los parámetros apropiados
+        "main:app",
+        host=settings.host,
+        port=settings.port,
+        reload=settings.debug,
+        log_level=settings.log_level.lower(),
     )
-
-

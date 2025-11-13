@@ -15,9 +15,9 @@ class Settings(BaseSettings):
     # Configuración básica de la aplicación
     app_name: str = "API de Música"
     app_version: str = "1.0.0"
+    description: str = "Una API RESTful para gestionar usuarios, canciones y favoritos"
 
     # Configuración del entorno
-    # environment: Literal["development", "testing", "production"] = "development"
     environment: str = "development"
 
     # Configuración de la base de datos
@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./musica.db"
 
     # Configuración del servidor
-    host: str = "0.0.0.0"
+    host: str = "127.0.0.1"
     port: int = 8000
     debug: bool = True
 
@@ -34,13 +34,13 @@ class Settings(BaseSettings):
     # En desarrollo puedes usar ["*"], en producción especifica los orígenes permitidos
     cors_origins: list[str] = ["*"]
 
-    # TODO: Configuración de seguridad (para futuras mejoras)
-    # secret_key: str = "your-secret-key-here"  # Cambiar en producción
-    # algorithm: str = "HS256"
-    # access_token_expire_minutes: int = 30
+    # Configuración de seguridad
+    secret_key: str = "mi_clave_secreta_super_segura_123"
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
 
-    # TODO: Configuración de logging
-    # log_level: str = "INFO"
+    # Configuración de logging
+    log_level: str = "INFO"
 
     class Config:
         """
@@ -50,13 +50,6 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
-
-        # TODO: Opcional - Agregar validación personalizada
-        # @validator("database_url")
-        # def validate_database_url(cls, v):
-        #     if not v:
-        #         raise ValueError("DATABASE_URL no puede estar vacío")
-        #     return v
 
 
 # Crear una instancia global de Settings
@@ -68,7 +61,6 @@ class DevelopmentSettings(Settings):
     """Configuración para el entorno de desarrollo."""
 
     debug: bool = True
-    # TODO: Agregar configuraciones específicas de desarrollo
 
 
 class TestingSettings(Settings):
@@ -76,16 +68,14 @@ class TestingSettings(Settings):
 
     # Usar una base de datos diferente para pruebas
     database_url: str = "sqlite:///./test_musica.db"
-    # TODO: Agregar configuraciones específicas de pruebas
+    debug: bool = True
 
 
 class ProductionSettings(Settings):
     """Configuración para el entorno de producción."""
 
     debug: bool = False
-    # TODO: Agregar configuraciones específicas de producción
-    # TODO: Cambiar a una base de datos más robusta (PostgreSQL, MySQL)
-    # database_url: str = "postgresql://user:password@localhost/musica_prod"
+    cors_origins: list[str] = ["https://mi-dominio.com"]
 
 
 # Función para obtener la configuración según el entorno
@@ -101,12 +91,3 @@ def get_settings() -> Settings:
         return ProductionSettings()
     else:
         return DevelopmentSettings()
-
-
-# TODO: Opcional - Agregar validación de configuración al inicio
-# def validate_settings():
-#     """Valida que todas las configuraciones necesarias estén presentes."""
-#     required_settings = ["database_url", "app_name"]
-#     for setting in required_settings:
-#         if not getattr(settings, setting, None):
-#             raise ValueError(f"Configuración requerida no encontrada: {setting}")
